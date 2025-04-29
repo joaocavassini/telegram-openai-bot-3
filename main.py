@@ -2,7 +2,7 @@ import requests
 import time
 import os
 
-# Pegando os tokens das variáveis de ambiente configuradas no Render
+# Variáveis de ambiente (use variáveis seguras no deploy)
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/"
@@ -26,7 +26,10 @@ def ask_openai(question):
     }
     payload = {
         "model": "gpt-3.5-turbo",
-        "messages": [{"role": "user", "content": question}]
+        "messages": [
+            {"role": "system", "content": "Você é um assistente de inglês, especializado no curso da Rock Academy. Responda às perguntas de inglês de maneira clara e didática."},
+            {"role": "user", "content": question}
+        ]
     }
     response = requests.post(url, headers=headers, json=payload)
     response.raise_for_status()
@@ -43,10 +46,17 @@ def main():
                     chat_id = update["message"]["chat"]["id"]
                     text = update["message"].get("text")
                     if text:
-                        try:
-                            response = ask_openai(text)
-                        except Exception:
-                            response = "Desculpe, ocorreu um erro. Tente novamente mais tarde."
+                        # Comandos personalizados
+                        if text.startswith("/start"):
+                            response = "Olá! Sou seu assistente de inglês da Rock Academy. Tire sua dúvida sobre o curso ou inglês!"
+                        elif text.startswith("/ajuda"):
+                            response = "Envie suas perguntas em inglês ou sobre o curso. Estou aqui para ajudar!"
+                        elif text.startswith("/dica"):
+                            response = "Dica de inglês: Use 'there is' para singular e 'there are' para plural!"
+                        elif text.startswith("/sobre"):
+                            response = "Este bot foi criado para alunos da Rock Academy. Aqui você tira dúvidas de inglês a qualquer momento!"
+                        else:
+                            response = ask_openai(text)  # Pergunta ao modelo para qualquer dúvida do aluno
                         send_message(chat_id, response)
         time.sleep(1)
 
